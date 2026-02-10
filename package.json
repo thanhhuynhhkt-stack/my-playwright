@@ -1,0 +1,32 @@
+{
+  "name": "playwright-automation-framework",
+  "version": "1.0.0",
+  "description": "Production-grade Playwright + TypeScript test automation framework",
+  "author": "",
+  "license": "MIT",
+  "scripts": {
+    "test": "npx playwright test",
+    "test:chrome": "npx playwright test --project=chromium",
+    "test:firefox": "npx playwright test --project=firefox",
+    "test:safari": "npx playwright test --project=webkit",
+    "test:edge": "npx playwright test --project=edge",
+    "test:smoke": "npx playwright test --grep @smoke",
+    "test:regression": "npx playwright test --grep @regression",
+    "test:headed": "npx playwright test --headed",
+    "report": "npx playwright show-report reports/html",
+    "setup": "ts-node scripts/setup-test-data.ts",
+    "cleanup": "ts-node scripts/cleanup-test-data.ts",
+    "lint": "eslint src/ tests/ --ext .ts",
+    "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\""
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0",
+    "ts-node": "^10.9.2",
+    "dotenv": "^16.4.7",
+    "eslint": "^9.0.0",
+    "prettier": "^3.4.0",
+    "winston": "^3.17.0"
+  }
+}
