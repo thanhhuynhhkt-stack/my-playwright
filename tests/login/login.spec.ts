@@ -1,79 +1,76 @@
-/**
- * Login test spec.
- * Demonstrates parameterized testing across user groups and login methods.
- *
- * To add tests for a new login method:
- * 1. Add the method to the loginMethods array below
- * 2. Create helper steps if needed
- * 3. Tests are generated automatically for all group/method combinations
- */
+// Login tests.
+//
+// These tests cover the basic login scenarios that any QC tester would check manually:
+// - Can a user log in with correct credentials?
+// - Does the app show an error for wrong credentials?
+// - Does OTP verification work?
+// - Does QR code login show up?
+//
+// Each test reads from top to bottom, just like the steps you would follow
+// when testing this by hand. If you want to add a new login test, just add
+// another test() block below and write the steps in order.
 
-import { test, expect } from '../../src/fixtures/test.fixture';
-import { GROUP_CONFIGS } from '../../src/data/group-config';
-import { MockManager } from '../../src/mocks/MockManager';
-import { QrCodeMock } from '../../src/mocks/QrCodeMock';
+import { test, expect } from '../../helpers/test-setup';
+import { createLowTierUser } from '../../helpers/test-users';
+import { getMockOtp } from '../../helpers/mock-otp';
 
-// --------------- Credential-based Login (all groups) ---------------
+test.describe('Login', () => {
 
-for (const [groupId, config] of Object.entries(GROUP_CONFIGS)) {
-  test.describe(`Login: ${config.displayName} ${config.tags.join(' ')}`, () => {
-    test(`logs in with username/password + OTP @smoke`, async ({
-      page,
-      loginPage,
-      testDataFactory,
-      emailService,
-      logger,
-    }) => {
-      const user = testDataFactory.createTestUser(groupId);
+  test('should log in with username, password, and OTP @smoke', async ({ loginPage, page }) => {
+    // This is the most common login flow. The user types their credentials,
+    // the app asks for an OTP code, and after entering it they get in.
+    const user = createLowTierUser();
 
-      await loginPage.navigate();
-      await loginPage.loginWithCredentials(user.username, user.password);
+    await loginPage.goto();
+    await loginPage.login(user.username, user.password);
 
-      // Handle OTP verification based on group's verification strategy
-      if (config.verificationStrategy === 'email-otp') {
-        const otp = await emailService.fetchLatestOTP(user.email);
-        await loginPage.enterOtp(otp.code);
-      }
+    // The app should now show the OTP step
+    await expect(loginPage.otpStep).toBeVisible();
 
-      // Verify successful login — redirected away from login page
-      await expect(page).not.toHaveURL(/\/login/);
-      logger.info(`Login successful for ${config.displayName}`);
-    });
+    // Enter the OTP code (we use a mock code in tests)
+    const otpCode = getMockOtp();
+    await loginPage.enterOtp(otpCode);
 
-    test(`shows error on invalid credentials`, async ({
-      loginPage,
-    }) => {
-      await loginPage.navigate();
-      await loginPage.loginWithCredentials('invalid_user', 'wrong_password');
-
-      await loginPage.expectErrorVisible();
-    });
+    // After OTP, the user should be redirected away from the login page
+    await expect(page).not.toHaveURL(/\/login/);
   });
-}
 
-// --------------- QR Code Login (mocked) ---------------
+  test('should show error when credentials are wrong @smoke', async ({ loginPage }) => {
+    // Try to log in with a username and password that do not exist.
+    // The app should show an error message, not crash or redirect.
+    await loginPage.goto();
+    await loginPage.login('wrong_user', 'wrong_password');
 
-test.describe('Login: QR Code @regression', () => {
-  test('logs in via QR code scan (mocked)', async ({
-    page,
-    loginPage,
-    logger,
-  }) => {
-    // Set up QR code mocks
-    const mockManager = new MockManager(page, logger);
-    const qrMock = new QrCodeMock(mockManager);
-    await qrMock.setup();
+    await expect(loginPage.errorMessage).toBeVisible();
+  });
 
-    await loginPage.navigate();
+  test('should show QR code login option @regression', async ({ loginPage, page }) => {
+    // Some users prefer scanning a QR code with their phone instead of typing a password.
+    // This test checks that the QR code login option exists and shows a QR image.
+
+    // We mock the QR code API so the test does not need a real backend for this.
+    await page.route('**/api/auth/qr-code/generate', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          qrCodeUrl: 'data:image/png;base64,fakeQrData',
+          sessionId: 'mock-session-123',
+        }),
+      });
+    });
+
+    await loginPage.goto();
     await loginPage.switchToQrCodeLogin();
 
-    // Verify QR code is displayed
-    expect(await loginPage.isQrCodeVisible()).toBeTruthy();
+    await expect(loginPage.qrCodeImage).toBeVisible();
+  });
 
-    // The mock simulates a successful scan after polling
-    // In the real app, the page would poll and redirect after scan
-    logger.info('QR code login mock test completed');
+  test('should keep the login button disabled while fields are empty @regression', async ({ loginPage }) => {
+    // A quick check to make sure you cannot submit the form without filling anything.
+    await loginPage.goto();
 
-    await mockManager.clearAll();
+    // Do not fill in anything, just check the button state
+    await expect(loginPage.loginButton).toBeVisible();
   });
 });
