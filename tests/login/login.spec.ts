@@ -10,6 +10,7 @@
 // when testing this by hand. If you want to add a new login test, just add
 // another test() block below and write the steps in order.
 
+import { Route } from '@playwright/test';
 import { test, expect } from '../../helpers/test-setup';
 import { createLowTierUser } from '../../helpers/test-users';
 import { getMockOtp } from '../../helpers/mock-otp';
@@ -49,7 +50,7 @@ test.describe('Login', () => {
     // This test checks that the QR code login option exists and shows a QR image.
 
     // We mock the QR code API so the test does not need a real backend for this.
-    await page.route('**/api/auth/qr-code/generate', async (route) => {
+    await page.route('**/api/auth/qr-code/generate', async (route: Route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
