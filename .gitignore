@@ -7,3 +7,5 @@ blob-report/
 .env
 *.log
 *.tsbuildinfo
+.claude/
+helpers/test-users.ts
