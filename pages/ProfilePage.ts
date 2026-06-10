@@ -4,7 +4,7 @@
 // Medium tier users see notification settings.
 // Low tier users see just the basics (name and email).
 
-import { Page, Locator } from '@playwright/test';
+import { Page, Locator, test } from '@playwright/test';
 
 export class ProfilePage {
   readonly page: Page;
@@ -51,14 +51,20 @@ export class ProfilePage {
   // -- Actions --
 
   async goto() {
-    await this.page.goto('/profile');
+    await test.step('Navigate to profile page', async () => {
+      await this.page.goto('/profile');
+    });
   }
 
   async clickEdit() {
-    await this.editButton.click();
+    await test.step('Click Edit profile button', async () => {
+      await this.editButton.click();
+    });
   }
 
   async clickDeleteAccount() {
-    await this.deleteAccountButton.click();
+    await test.step('Click Delete Account button', async () => {
+      await this.deleteAccountButton.click();
+    });
   }
 }

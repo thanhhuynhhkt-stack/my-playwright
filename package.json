@@ -3,20 +3,27 @@
   "version": "1.0.0",
   "description": "Simple Playwright test automation project",
   "scripts": {
-    "test": "npx playwright test",
-    "test:chrome": "npx playwright test --project=chromium",
-    "test:firefox": "npx playwright test --project=firefox",
-    "test:safari": "npx playwright test --project=webkit",
-    "test:edge": "npx playwright test --project=edge",
-    "test:smoke": "npx playwright test --grep @smoke",
-    "test:regression": "npx playwright test --grep @regression",
-    "test:headed": "npx playwright test --headed",
-    "report": "npx playwright show-report reports/html"
+    "clean:allure": "npx rimraf allure-results allure-report",
+    "test": "npm run clean:allure && npx playwright test",
+    "test:chrome": "npm run clean:allure && npx playwright test --project=chromium",
+    "test:firefox": "npm run clean:allure && npx playwright test --project=firefox",
+    "test:safari": "npm run clean:allure && npx playwright test --project=webkit",
+    "test:edge": "npm run clean:allure && npx playwright test --project=edge",
+    "test:smoke": "npm run clean:allure && npx playwright test --grep @smoke",
+    "test:regression": "npm run clean:allure && npx playwright test --grep @regression",
+    "test:headed": "npm run clean:allure && npx playwright test --headed",
+    "report": "npx playwright show-report reports/html",
+    "allure:generate": "npx allure generate allure-results --clean -o allure-report",
+    "allure:open": "npx allure open allure-report",
+    "allure:report": "npm run allure:generate && npm run allure:open"
   },
   "devDependencies": {
+    "@playwright/mcp": "^0.0.68",
     "@playwright/test": "^1.49.0",
     "@types/node": "^22.0.0",
-    "typescript": "^5.7.0",
-    "dotenv": "^16.4.7"
+    "allure-commandline": "^2.36.0",
+    "allure-playwright": "^3.4.5",
+    "dotenv": "^16.4.7",
+    "typescript": "^5.7.0"
   }
 }

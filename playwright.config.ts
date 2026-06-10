@@ -42,6 +42,10 @@ export default defineConfig({
   // Where the test files live
   testDir: './tests',
 
+  // Registration tests involve multiple external redirects (Mockpass → Microsoft → ADFS → Changi)
+  // and take well over 30 s; 120 s is a safe upper bound.
+  timeout: 120_000,
+
   // Run tests in parallel for speed
   fullyParallel: true,
 
@@ -54,15 +58,16 @@ export default defineConfig({
   // Limit workers in CI so it does not overload the machine
   workers: process.env.CI ? 4 : undefined,
 
-  // Reports: HTML report you can open in a browser, plus a JSON file for CI tools
+  // Reports: HTML report, JSON for CI tools, and Allure for detailed reporting
   reporter: [
     ['html', { open: 'never', outputFolder: 'reports/html' }],
     ['json', { outputFile: 'reports/results.json' }],
+    ['allure-playwright', { outputFolder: 'allure-results' }],
   ],
 
   use: {
-    // Your app URL. Change this in the .env file, not here.
-    baseURL: process.env.BASE_URL || 'http://localhost:3000',
+    // Target environment URL — set BASE_URL in your .env file to switch environments.
+    baseURL: process.env.BASE_URL || 'https://changi-identity-dev.changiairport.com',
 
     // Save traces on the first retry so you can debug flaky tests
     trace: 'on-first-retry',
@@ -70,14 +75,16 @@ export default defineConfig({
     // Take a screenshot when a test fails. Helps a lot when debugging.
     screenshot: 'only-on-failure',
 
-    // Record video when a test fails
-    video: 'retain-on-failure',
+    // Always record video as evidence (attached to Allure report)
+    video: 'on',
 
     // How long to wait for a click or fill before giving up
     actionTimeout: 15_000,
 
     // How long to wait for a page to load
     navigationTimeout: 30_000,
+
+    ignoreHTTPSErrors: true,
   },
 
   projects,

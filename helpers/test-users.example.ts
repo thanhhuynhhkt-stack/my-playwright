@@ -1,48 +1,53 @@
-// Test user data.
+// Test user data template.
 //
-// These are the fake users we use in our tests. Each user belongs to a different
-// tier (high, medium, low) because the app behaves differently for each tier.
+// Copy this file to test-users.ts and fill in real values before running tests.
+// test-users.ts is gitignored to prevent credentials from being committed.
 //
-// The password is the same for all test users to keep things simple.
-// If you need a new test user, just add one here following the same pattern.
+// CHANGI_USERNAME / CHANGI_PASSWORD: the corporate Microsoft/ADFS account used
+// during the "Log in with Changi" step of the registration flow.
+//
+// userUid: the Changi Identity user ID used by the cleanup API (DELETE /dev/users/:uid)
+// to reset the account before each test run. Find it in the dev/QA database.
 
-export const TEST_PASSWORD = 'Test@Pass123!';
+const CHANGI_USERNAME = 'your.name@your-company.com';
+const CHANGI_PASSWORD = 'YourPassword@123';
 
-// We use a timestamp to make usernames unique every time tests run.
-// This avoids "user already exists" errors if your app keeps user data between runs.
-function uniqueId() {
-  return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-}
-
-export function createHighTierUser() {
-  const id = uniqueId();
+export function group1User() {
   return {
-    username: `testuser_high_${id}`,
-    password: TEST_PASSWORD,
-    email: `testuser_high_${id}@test.example.com`,
-    firstName: 'Test',
-    lastName: `High_${id}`,
+    singpassUsername: 'yoursingpassusername [Group 1]',
+    mobileNumber: '81234567',
+    password: 'YourPassword@123',
+    changiUsername: CHANGI_USERNAME,
+    changiPassword: CHANGI_PASSWORD,
+    userUid: 'U000000000000',
   };
 }
 
-export function createMediumTierUser() {
-  const id = uniqueId();
+export function group2User() {
   return {
-    username: `testuser_medium_${id}`,
-    password: TEST_PASSWORD,
-    email: `testuser_medium_${id}@test.example.com`,
-    firstName: 'Test',
-    lastName: `Medium_${id}`,
+    singpassUsername: 'yoursingpassusername [Group 2]',
+    mobileNumber: '81234567',
+    password: 'YourPassword@123',
+    changiUsername: CHANGI_USERNAME,
+    changiPassword: CHANGI_PASSWORD,
+    userUid: 'U000000000001',
   };
 }
 
-export function createLowTierUser() {
-  const id = uniqueId();
+export function group3User() {
   return {
-    username: `testuser_low_${id}`,
-    password: TEST_PASSWORD,
-    email: `testuser_low_${id}@test.example.com`,
-    firstName: 'Test',
-    lastName: `Low_${id}`,
+    singpassUsername: 'yoursingpassusername [Group 3]',
+    mobileNumber: '81234567',
+    password: 'YourPassword@123',
+    changiUsername: CHANGI_USERNAME,
+    changiPassword: CHANGI_PASSWORD,
+    userUid: 'U000000000002',
+  };
+}
+
+export function sauceStandardUser() {
+  return {
+    username: 'standard_user',
+    password: 'secret_sauce',
   };
 }

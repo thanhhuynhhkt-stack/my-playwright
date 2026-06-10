@@ -9,3 +9,6 @@ blob-report/
 *.tsbuildinfo
 .claude/
 helpers/test-users.ts
+.idea/
+allure-results/
+allure-report/

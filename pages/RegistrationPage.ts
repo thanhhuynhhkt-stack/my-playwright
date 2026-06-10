@@ -1,114 +1,132 @@
 // Registration page object.
-// This page has a multi-step form. Each method matches one thing you would do
-// as a manual tester filling out the registration form.
+// Covers the full registration flow: Singpass retrieval → mobile → password → terms → done.
+// Works for Group 1, Group 2, and Group 3 — all groups share the same steps,
+// only the test user data (Singpass username, mobile, password) differs per group.
 
-import { Page, Locator } from '@playwright/test';
+import { Page, Locator, test } from '@playwright/test';
 
 export class RegistrationPage {
   readonly page: Page;
+  private readonly baseUrl: string;
+  private readonly registerUrl: string;
+  readonly landingUrl: string;
 
   constructor(page: Page) {
     this.page = page;
+    if (!process.env.BASE_URL) {
+      throw new Error(
+        'BASE_URL is not set.'
+      );
+    }
+    this.baseUrl = process.env.BASE_URL.replace(/\/$/, '');
+    this.registerUrl = `${this.baseUrl}/fe/authentication/register-information`;
+    this.landingUrl = `${this.baseUrl}/fe/authentication/landing`;
   }
 
   // -- Locators --
 
-  get firstNameInput(): Locator {
-    return this.page.locator('[data-testid="reg-first-name"]');
+  get retrieveMyInfoButton(): Locator {
+    // Button contains only an <img alt=""> so no text-based selector works;
+    // target it via the image's src attribute instead.
+    return this.page.locator('button:has(img[src*="retrieve-myinfo"])');
   }
 
-  get lastNameInput(): Locator {
-    return this.page.locator('[data-testid="reg-last-name"]');
+  get mobileInput(): Locator {
+    return this.page.getByPlaceholder('0000 0000');
   }
 
-  get emailInput(): Locator {
-    return this.page.locator('[data-testid="reg-email"]');
+  // Used on both the "Complete profile" (mobile) step and the "Set password" step.
+  get continueButton(): Locator {
+    return this.page.getByRole('button', { name: 'Continue' });
   }
 
-  get passwordInput(): Locator {
-    return this.page.locator('[data-testid="reg-password"]');
+  // From the "Set password" page: placeholders are "New password" / "Re-enter password"
+  get newPasswordInput(): Locator {
+    return this.page.getByPlaceholder('New password');
   }
 
   get confirmPasswordInput(): Locator {
-    return this.page.locator('[data-testid="reg-confirm-password"]');
-  }
-
-  get nextButton(): Locator {
-    return this.page.locator('[data-testid="reg-next"]');
-  }
-
-  get submitButton(): Locator {
-    return this.page.locator('[data-testid="reg-submit"]');
-  }
-
-  get otpInput(): Locator {
-    return this.page.locator('[data-testid="reg-otp"]');
-  }
-
-  get verifyOtpButton(): Locator {
-    return this.page.locator('[data-testid="reg-verify-otp"]');
+    return this.page.getByPlaceholder('Re-enter password');
   }
 
   get termsCheckbox(): Locator {
-    return this.page.locator('[data-testid="reg-terms-checkbox"]');
+    return this.page.getByRole('checkbox', { name: /Terms & Conditions/i });
   }
 
-  get stepIndicator(): Locator {
-    return this.page.locator('[data-testid="reg-step-indicator"]');
+  get createAccountButton(): Locator {
+    return this.page.getByRole('button', { name: 'Create account' });
   }
 
+  // Text is matched as-is from the actual success screen
   get successMessage(): Locator {
-    return this.page.locator('[data-testid="reg-success"]');
+    return this.page.getByText('Changi Identity account created successfully!');
   }
 
-  get errorMessage(): Locator {
-    return this.page.locator('[data-testid="reg-error"]');
+  // "Log in" button on the Account Information page — triggers SSO via Microsoft
+  get changiLoginButton(): Locator {
+    return this.page.locator('.cag-login-button');
   }
 
-  // Password strength indicators
-  get passwordLengthIndicator(): Locator {
-    return this.page.locator('[data-testid="pwd-length"]');
-  }
-
-  get passwordUppercaseIndicator(): Locator {
-    return this.page.locator('[data-testid="pwd-uppercase"]');
-  }
-
-  get passwordSpecialIndicator(): Locator {
-    return this.page.locator('[data-testid="pwd-special"]');
+  get doneButton(): Locator {
+    return this.page.getByRole('button', { name: 'Done' });
   }
 
   // -- Actions --
 
   async goto() {
-    await this.page.goto('/register');
+    await test.step('Navigate to registration page', async () => {
+      await this.page.goto(this.registerUrl);
+    });
   }
 
-  async fillPersonalInfo(firstName: string, lastName: string, email: string) {
-    await this.firstNameInput.fill(firstName);
-    await this.lastNameInput.fill(lastName);
-    await this.emailInput.fill(email);
+  async clickChangiLogin() {
+    await test.step('Click Log in with Changi on Account Information page', async () => {
+      await this.changiLoginButton.click();
+    });
   }
 
-  async fillPassword(password: string) {
-    await this.passwordInput.fill(password);
-    await this.confirmPasswordInput.fill(password);
+  async clickRetrieveMyInfo() {
+    await test.step('Click Retrieve MyInfo with Singpass', async () => {
+      await this.retrieveMyInfoButton.click();
+    });
   }
 
-  async clickNext() {
-    await this.nextButton.click();
+  async enterMobile(mobile: string) {
+    await test.step(`Enter company mobile: ${mobile}`, async () => {
+      // Wait for the "Company information" heading to confirm the Angular component
+      // has fully initialized its OAuth session before interacting with the form.
+      await this.page.getByRole('heading', { name: 'Company information' }).waitFor({ state: 'visible', timeout: 15_000 });
+      // Use pressSequentially to trigger keydown/keyup events that Angular reactive
+      // forms need for proper two-way binding (fill() alone may not trigger validators).
+      await this.mobileInput.click();
+      await this.mobileInput.pressSequentially(mobile, { delay: 50 });
+    });
   }
 
-  async enterOtp(code: string) {
-    await this.otpInput.fill(code);
-    await this.verifyOtpButton.click();
+  async clickContinue() {
+    await test.step('Click Continue', async () => {
+      await this.continueButton.click();
+    });
   }
 
-  async acceptTerms() {
-    await this.termsCheckbox.check();
+  async enterPasswords(password: string) {
+    await test.step('Enter new password and confirm password', async () => {
+      await this.newPasswordInput.fill(password);
+      await this.confirmPasswordInput.fill(password);
+    });
   }
 
-  async submit() {
-    await this.submitButton.click();
+  async acceptTermsAndCreate() {
+    await test.step('Scroll down, check Terms & Conditions, click Create account', async () => {
+      await this.termsCheckbox.scrollIntoViewIfNeeded();
+      await this.termsCheckbox.check();
+      await this.createAccountButton.click();
+    });
+  }
+
+  async clickDone() {
+    await test.step('Click Done', async () => {
+      await this.doneButton.click();
+    });
   }
 }

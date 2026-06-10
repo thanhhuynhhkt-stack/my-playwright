@@ -9,5 +9,5 @@
 // like Mailosaur, you would change this file to call their API instead.
 
 export function getMockOtp(): string {
-  return '123456';
+  return '1';
 }
