@@ -51,11 +51,11 @@ export class RegistrationPage {
     return this.page.getByRole('button', { name: 'Verify email' });
   }
 
-  // Group 2: OTP input on "Enter OTP to verify email" screen.
-  // The app may render 6 individual digit boxes — if so, target the first
-  // and use pressSequentially to tab through, or adjust to fill each box.
-  get otpInput(): Locator {
-    return this.page.locator('input[type="text"], input[type="number"]').first();
+  // Group 2: first digit box of the 6-box OTP input on "Enter OTP to verify email" screen.
+  // Used only to receive the initial click — keyboard.type() then drives the rest via auto-advance.
+  // Excludes hidden inputs; catches inputs with no type attribute (which don't match [type="text"]).
+  get otpFirstBox(): Locator {
+    return this.page.locator('input:not([type="hidden"])').first();
   }
 
   // From the "Set password" page: placeholders are "New password" / "Re-enter password"
@@ -138,8 +138,11 @@ export class RegistrationPage {
 
   async enterOtp(otp: string) {
     await test.step(`Enter OTP: ${otp}`, async () => {
-      await this.otpInput.waitFor({ state: 'visible', timeout: 10_000 });
-      await this.otpInput.pressSequentially(otp, { delay: 80 });
+      // Click the first box to focus it, then type all digits via keyboard.
+      // The OTP widget auto-advances focus to the next box on each keystroke.
+      await this.otpFirstBox.waitFor({ state: 'visible', timeout: 10_000 });
+      await this.otpFirstBox.click();
+      await this.page.keyboard.type(otp, { delay: 100 });
     });
   }
 

@@ -8,7 +8,7 @@
 // 5.  Click "Continue" → navigate to Complete Profile page
 // 6.  Enter company email + company mobile, click Continue → Identity verification popup
 // 7.  Click "Verify email" → Enter OTP screen
-// 8.  Poll IMAP inbox for the real OTP → enter it, click Continue → Set password
+// 8.  Poll Gmail API for the real OTP → enter it, click Continue → Set password
 // 9.  Enter password + confirm → Continue → Terms & Conditions
 // 10. Scroll, accept T&C → Create account → success screen
 // 11. Click Done → verify redirect to landing page
@@ -17,7 +17,7 @@ import { test, expect } from '@playwright/test';
 import { RegistrationPage } from '../../pages/RegistrationPage';
 import { MockpassPage } from '../../pages/MockpassPage';
 import { group2User } from '../../helpers/test-users';
-import { getImapOtp } from '../../helpers/imap-otp';
+import { getGmailOtp } from '../../helpers/gmail-otp';
 
 test.describe('Registration - Group 2', () => {
   test.describe.configure({ mode: 'serial' });
@@ -62,8 +62,8 @@ test.describe('Registration - Group 2', () => {
     // Step 6: Click "Verify email" → moves to OTP entry screen
     await registrationPage.clickVerifyEmail();
 
-    // Step 7: Poll IMAP inbox for the OTP email sent in step 5 and enter the code
-    const otp = await getImapOtp(otpSentAfter);
+    // Step 7: Poll Gmail API for the OTP email sent in step 5 and enter the code
+    const otp = await getGmailOtp(otpSentAfter);
     await registrationPage.enterOtp(otp);
     await registrationPage.clickContinue();
 
