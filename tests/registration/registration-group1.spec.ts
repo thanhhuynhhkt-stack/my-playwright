@@ -35,7 +35,7 @@ test.describe('Registration - Group 1', () => {
     await request.delete(`/dev/users/${user.userUid}`);
   });
 
-  test('should register a Group 1 user via Singpass @smoke', async ({ page }) => {
+  test('Register a Group 1 user via Singpass successfully @smoke', async ({ page }) => {
     const registrationPage = new RegistrationPage(page);
     const mockpassPage = new MockpassPage(page);
     const msLoginPage = new MicrosoftLoginPage(page);
@@ -54,7 +54,6 @@ test.describe('Registration - Group 1', () => {
 
     // Step 4: Select username → Mockpass navigates back to Account Information page
     await mockpassPage.selectUsername(user.singpassUsername);
-    await page.waitForURL(/changi-identity-dev\.changiairport\.com/);
 
     // Step 5: Click "CAG Log in" → full Microsoft/ADFS login flow
     await registrationPage.clickChangiLogin();

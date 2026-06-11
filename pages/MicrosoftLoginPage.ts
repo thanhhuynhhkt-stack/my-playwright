@@ -8,6 +8,7 @@
 //   5. Page redirects back to Web Application.
 
 import { Page, Locator, test } from '@playwright/test';
+import { getEnvConfig } from '../helpers/env';
 
 export class MicrosoftLoginPage {
   readonly page: Page;
@@ -57,7 +58,7 @@ export class MicrosoftLoginPage {
 
       // Step 2: Intermediate "Taking you to your org's sign-in page" — no action needed.
       // Wait until the browser arrives at ADFS.
-      await this.page.waitForURL(/adnovum\.ch/, { timeout: 30_000 });
+      await this.page.waitForURL(getEnvConfig().adfsHostPattern, { timeout: 30_000 });
 
       // Step 3: Fill password on ADFS and sign in.
       await this.adfsPasswordInput.fill(password);
@@ -69,7 +70,7 @@ export class MicrosoftLoginPage {
       await this.staySignedInNoButton.click();
 
       // Step 5: Wait for redirect back to Web Application.
-      await this.page.waitForURL(/changi-identity-dev\.changiairport\.com/, { timeout: 30_000 });
+      await this.page.waitForURL(getEnvConfig().appHostPattern, { timeout: 30_000 });
     });
   }
 }

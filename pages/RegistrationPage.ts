@@ -31,6 +31,12 @@ export class RegistrationPage {
     return this.page.locator('button:has(img[src*="retrieve-myinfo"])');
   }
 
+  // Group 2: company email input on the Complete Profile page.
+  // Uses getByRole so it works regardless of the exact placeholder text.
+  get emailInput(): Locator {
+    return this.page.getByRole('textbox', { name: /email/i });
+  }
+
   get mobileInput(): Locator {
     return this.page.getByPlaceholder('0000 0000');
   }
@@ -38,6 +44,18 @@ export class RegistrationPage {
   // Used on both the "Complete profile" (mobile) step and the "Set password" step.
   get continueButton(): Locator {
     return this.page.getByRole('button', { name: 'Continue' });
+  }
+
+  // Group 2: "Verify email" button in the Identity verification popup
+  get verifyEmailButton(): Locator {
+    return this.page.getByRole('button', { name: 'Verify email' });
+  }
+
+  // Group 2: OTP input on "Enter OTP to verify email" screen.
+  // The app may render 6 individual digit boxes — if so, target the first
+  // and use pressSequentially to tab through, or adjust to fill each box.
+  get otpInput(): Locator {
+    return this.page.locator('input[type="text"], input[type="number"]').first();
   }
 
   // From the "Set password" page: placeholders are "New password" / "Re-enter password"
@@ -91,6 +109,14 @@ export class RegistrationPage {
     });
   }
 
+  async enterEmail(email: string) {
+    await test.step(`Enter company email: ${email}`, async () => {
+      await this.emailInput.waitFor({ state: 'visible', timeout: 15_000 });
+      await this.emailInput.click();
+      await this.emailInput.pressSequentially(email, { delay: 50 });
+    });
+  }
+
   async enterMobile(mobile: string) {
     await test.step(`Enter company mobile: ${mobile}`, async () => {
       // Wait for the "Company information" heading to confirm the Angular component
@@ -100,6 +126,20 @@ export class RegistrationPage {
       // forms need for proper two-way binding (fill() alone may not trigger validators).
       await this.mobileInput.click();
       await this.mobileInput.pressSequentially(mobile, { delay: 50 });
+    });
+  }
+
+  async clickVerifyEmail() {
+    await test.step('Click Verify email', async () => {
+      await this.verifyEmailButton.waitFor({ state: 'visible', timeout: 10_000 });
+      await this.verifyEmailButton.click();
+    });
+  }
+
+  async enterOtp(otp: string) {
+    await test.step(`Enter OTP: ${otp}`, async () => {
+      await this.otpInput.waitFor({ state: 'visible', timeout: 10_000 });
+      await this.otpInput.pressSequentially(otp, { delay: 80 });
     });
   }
 

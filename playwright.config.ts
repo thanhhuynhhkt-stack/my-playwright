@@ -42,7 +42,7 @@ export default defineConfig({
   // Where the test files live
   testDir: './tests',
 
-  // Registration tests involve multiple external redirects (Mockpass → Microsoft → ADFS → Changi)
+  // Registration tests involve multiple external redirects (Mockpass → Microsoft → ADFS)
   // and take well over 30 s; 120 s is a safe upper bound.
   timeout: 120_000,
 
@@ -67,7 +67,7 @@ export default defineConfig({
 
   use: {
     // Target environment URL — set BASE_URL in your .env file to switch environments.
-    baseURL: process.env.BASE_URL || 'https://changi-identity-dev.changiairport.com',
+    baseURL: process.env.BASE_URL,
 
     // Save traces on the first retry so you can debug flaky tests
     trace: 'on-first-retry',

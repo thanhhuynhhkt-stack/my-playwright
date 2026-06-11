@@ -28,8 +28,7 @@ export function group2User() {
     singpassUsername: 'yoursingpassusername [Group 2]',
     mobileNumber: '81234567',
     password: 'YourPassword@123',
-    changiUsername: CHANGI_USERNAME,
-    changiPassword: CHANGI_PASSWORD,
+    companyEmail: 'yourcompanyemail@your-company.com',
     userUid: 'U000000000001',
   };
 }
@@ -39,15 +38,7 @@ export function group3User() {
     singpassUsername: 'yoursingpassusername [Group 3]',
     mobileNumber: '81234567',
     password: 'YourPassword@123',
-    changiUsername: CHANGI_USERNAME,
-    changiPassword: CHANGI_PASSWORD,
+    companyEmail: 'yourcompanyemail@your-company.com',
     userUid: 'U000000000002',
-  };
-}
-
-export function sauceStandardUser() {
-  return {
-    username: 'standard_user',
-    password: 'secret_sauce',
   };
 }

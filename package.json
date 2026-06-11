@@ -24,6 +24,7 @@
     "allure-commandline": "^2.36.0",
     "allure-playwright": "^3.4.5",
     "dotenv": "^16.4.7",
+    "imapflow": "^1.4.0",
     "typescript": "^5.7.0"
   }
 }

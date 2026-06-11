@@ -5,6 +5,7 @@
 // 2. Select a username from the datalist
 
 import { Page, Locator, test } from '@playwright/test';
+import { getEnvConfig } from '../helpers/env';
 
 export class MockpassPage {
   readonly page: Page;
@@ -39,6 +40,7 @@ export class MockpassPage {
 
       if (!assertUrl) throw new Error(`MockPass username "${username}" not found in datalist`);
       await this.page.goto(assertUrl);
+      await this.page.waitForURL(getEnvConfig().appHostPattern);
     });
   }
 }
