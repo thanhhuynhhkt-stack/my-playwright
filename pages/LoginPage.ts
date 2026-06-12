@@ -1,130 +1,112 @@
-// Login page object.
-// Each method maps to something you would do manually on the login screen.
-// If the app adds a new element to the login page, just add a new locator and method here.
-
-import { Page, Locator, expect, test } from '@playwright/test';
+import { Page, Locator, test } from '@playwright/test';
 
 export class LoginPage {
   readonly page: Page;
+  private readonly baseUrl: string;
+  readonly landingUrl: string;
+  readonly profileUrl: string;
 
   constructor(page: Page) {
     this.page = page;
+    if (!process.env.BASE_URL) throw new Error('BASE_URL is not set.');
+    this.baseUrl = process.env.BASE_URL.replace(/\/$/, '');
+    this.landingUrl = `${this.baseUrl}/fe/authentication/landing`;
+    this.profileUrl = `${this.baseUrl}/fe/account-settings/profile`;
   }
 
   // -- Locators --
-  // These match the data-testid attributes in the app HTML.
-  // If a selector changes in the app, you only fix it here, not in every test.
 
-  get loginB2bOIDCButton(): Locator {
-    return this.page.getByRole('button', { name: 'OIDC login' })
-  }
-
-  get registerButton(): Locator {
-    return this.page.getByRole('button',{name:'Register'});
+  get loginWithChangiIdentityButton(): Locator {
+    return this.page.getByRole('button', { name: /log in with changi identity/i });
   }
 
   get passwordLoginTab(): Locator {
-    return this.page.getByRole('link', { name: 'Password log in' })
+    return this.page.getByText(/password\s+log\s*in/i);
   }
 
-  get usernameInput(): Locator {
-    return this.page.getByRole('textbox', { name: 'Company Email' })
+  get companyEmailInput(): Locator {
+    return this.page.getByLabel(/company email/i);
   }
 
   get passwordInput(): Locator {
-    return this.page.getByRole('textbox', { name: 'Password' })
-  }
-
-  get hidePassIcon(): Locator {
-    return this.page.locator('#AuthUidPwDialog').getByRole('button')
+    return this.page.locator('[name="isiwebpasswd"]');
   }
 
   get loginButton(): Locator {
-    return this.page.getByRole('button', { name: 'Log in' })
+    return this.page.getByRole('button', { name: 'Log in' });
   }
 
-  get forgotPasswordLink(): Locator {
-    return this.page.getByRole('link', { name: 'Forgot password?' })
-  }
-  get otpPageText(): Locator{
-    return this.page.getByText('Please enter the security code which has been sent to your email.')
+  // Heading present only on the OTP entry screen — used to confirm we left the login form.
+  get otpScreenHeading(): Locator {
+    return this.page.getByText(/security code|one-time|enter.*code|otp/i).first();
   }
 
-  get otpCode1(): Locator {
-      return this.page.locator('input[name="otpCode1"]')
-    }
- 
-  get otpCode2(): Locator {
-    return this.page.locator('input[name="otpCode2"]')
+  // First digit box of the 6-box OTP input; keyboard.type() drives the rest via auto-advance.
+  // Only reached after otpScreenHeading confirms we are on the OTP screen.
+  get otpFirstBox(): Locator {
+    return this.page.locator('input:not([type="hidden"])').first();
   }
 
-  get otpCode3(): Locator {
-    return this.page.locator('input[name="otpCode3"]')
-  }
-
-  get otpCode4(): Locator {
-    return this.page.locator('input[name="otpCode4"]')
-  }
-
-  get otpCode5(): Locator {
-    return this.page.locator('input[name="otpCode5"]')
-  }
-
-  get otpCode6(): Locator {
-    return this.page.locator('input[name="otpCode6"]')
-  }
-
-  get otpContinueButton(): Locator {
-    return this.page.getByRole('button', { name: 'Continue' })
+  get continueButton(): Locator {
+    return this.page.getByRole('button', { name: 'Continue' });
   }
 
   get loginSuccessMessage(): Locator {
-    return this.page.getByText('You have successfully logged in.')
+    return this.page.getByText('You have logged in successfully!');
   }
 
   get backToHomeButton(): Locator {
-    return this.page.getByRole('button', { name: 'Back to Home' })
-  }
-
-  get logOutButton(): Locator {
-    return this.page.getByRole('button', { name: 'Logout' })
-  }
-
-  get failLoginMessage(): Locator {
-    return this.page.getByText('Please check your input.')
+    return this.page.getByRole('button', { name: /back to home/i });
   }
 
   // -- Actions --
-  // These are the things you actually do on the page, written in plain language.
 
   async goto() {
-    await test.step('Navigate to login page', async () => {
-      await this.page.goto('/');
+    await test.step('Navigate to landing page', async () => {
+      await this.page.goto(this.landingUrl);
     });
   }
 
-  async login(username: string, password: string) {
-    await test.step(`Login with username "${username}"`, async () => {
-      await this.usernameInput.fill(username);
-      await this.passwordInput.fill(password);
+  async clickLoginWithChangiIdentity() {
+    await test.step('Click Login with Changi Identity', async () => {
+      await this.loginWithChangiIdentityButton.click();
+      await this.page.waitForLoadState('networkidle');
+    });
+  }
+
+  async clickPasswordLoginTab() {
+    await test.step('Click Password login tab', async () => {
+      await this.passwordLoginTab.click();
+    });
+  }
+
+  async login(email: string, password: string) {
+    await test.step(`Login with email "${email}"`, async () => {
+      await this.companyEmailInput.click();
+      await this.companyEmailInput.pressSequentially(email, { delay: 50 });
+      await this.passwordInput.click();
+      await this.passwordInput.pressSequentially(password, { delay: 50 });
       await this.loginButton.click();
     });
   }
 
-  async enterOtp(code: string) {
-    await test.step('Enter OTP code', async () => {
-      const otpFields = [this.otpCode1, this.otpCode2, this.otpCode3, this.otpCode4, this.otpCode5, this.otpCode6];
-      for (const field of otpFields) {
-        await field.click();
-        await field.pressSequentially(code);
-      }
-      await this.otpContinueButton.click();
+  async enterOtp(otp: string) {
+    await test.step(`Enter OTP: ${otp}`, async () => {
+      await this.otpFirstBox.waitFor({ state: 'visible', timeout: 10_000 });
+      await this.otpFirstBox.click();
+      await this.page.keyboard.type(otp, { delay: 100 });
     });
   }
 
-  async logout() {
-    await test.step('Logout', async () => {
-      await this.logOutButton.click();
+  async clickContinue() {
+    await test.step('Click Continue', async () => {
+      await this.continueButton.click();
+    });
+  }
+
+  async clickBackToHome() {
+    await test.step('Click Back to home', async () => {
+      await this.backToHomeButton.click();
     });
   }
 }

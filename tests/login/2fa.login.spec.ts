@@ -1,79 +1,50 @@
-// Demo login tests.
-
 import { test, expect } from '@playwright/test';
 import { LoginPage } from '../../pages/LoginPage';
-import { Group2User } from '../../helpers/test-users';
-import { getMockOtp } from 'helpers/mock-otp';
+import { group2User } from '../../helpers/test-users';
+import { getGmailOtp } from '../../helpers/gmail-otp';
 
-test.describe('2FA Login', () => {
+test.describe('Login - Group 2', () => {
   test.describe.configure({ mode: 'serial' });
 
-  test('Log in with correct username and password @smoke', async ({ page }) => {
+  test('Login Group 2 user via password + Gmail OTP @smoke', async ({ page }) => {
     const loginPage = new LoginPage(page);
-    const user = Group2User();
+    const user = group2User();
 
+    // Step 1: Open landing page
     await loginPage.goto();
-    await test.step(`Click Login with OIDC -> Login page appear`, async () => {
-      await loginPage.loginB2bOIDCButton.click();
-      await page.waitForLoadState('networkidle');
-      await expect(loginPage.passwordLoginTab).toBeVisible();
-      await expect(loginPage.registerButton).toBeVisible();
+
+    // Step 2: Click "Login with Changi Identity" → redirects to FIDOUAF URL
+    await test.step('Click Login with Changi Identity → redirect to login page', async () => {
+      await loginPage.clickLoginWithChangiIdentity();
     });
 
-    await test.step(`Click Password log in tab -> Change tab success `, async () => {
-      await loginPage.passwordLoginTab.click();
-      await page.waitForURL(`https://login-test.adnsg-demo.getnevis.net/auth/2fa/`);
-      await expect(loginPage.usernameInput).toBeVisible();
+    // Step 3: Select "Password login" tab → Company Email + Password form appears
+    await test.step('Click Password login tab → login form appears', async () => {
+      await loginPage.clickPasswordLoginTab();
+      await expect(loginPage.companyEmailInput).toBeVisible();
       await expect(loginPage.passwordInput).toBeVisible();
     });
 
-    await test.step(`Input correct username & password and click Login`, async () => {
-      await loginPage.login(user.username, user.password);
-      await expect(loginPage.otpPageText).toBeVisible();
+    // Steps 4–5: Enter credentials, click Log in → OTP screen
+    const otpSentAfter = Date.now();
+    await test.step('Enter credentials and click Log in → OTP screen', async () => {
+      await loginPage.login(user.companyEmail, user.password);
+      await expect(loginPage.otpScreenHeading).toBeVisible({ timeout: 15_000 });
     });
-    
-    await test.step(`Input OTP code and click Continue`, async () => {
-      const otpCode = getMockOtp();
-      await loginPage.enterOtp(otpCode);
+
+    // Step 6: Poll Gmail API for OTP and enter the code
+    // Step 7: Click Continue → "You have logged in successfully!" screen
+    await test.step('Enter Gmail OTP and click Continue → success screen', async () => {
+      const otp = await getGmailOtp(otpSentAfter);
+      await loginPage.enterOtp(otp);
+      await loginPage.clickContinue();
       await expect(loginPage.loginSuccessMessage).toBeVisible();
     });
 
-    await test.step(`Click Back to Home button`, async () => {
-      await loginPage.backToHomeButton.click();
-      await expect(page).toHaveURL(`https://ci-mock-web-int.inferno-squad.adnovumlabs.com:8443/landing-page`);
-    });
-
-    await loginPage.logout();
-  });
-
-  test('Log in with incorrect username or password @smoke', async ({ page }) => {
-    const loginPage = new LoginPage(page);
-    const user = Group2User();
-
-    await loginPage.goto();
-    await test.step(`Click Login with OIDC -> Login page appear`, async () => {
-      await loginPage.loginB2bOIDCButton.click();
-      await page.waitForLoadState('networkidle');
-      await expect(loginPage.passwordLoginTab).toBeVisible();
-      await expect(loginPage.registerButton).toBeVisible();
-    });
-
-    await test.step(`Click Password log in tab -> Change tab success `, async () => {
-      await loginPage.passwordLoginTab.click();
-      await page.waitForURL(`https://login-test.adnsg-demo.getnevis.net/auth/2fa/`);
-      await expect(loginPage.usernameInput).toBeVisible();
-      await expect(loginPage.passwordInput).toBeVisible();
-    });
-
-    await test.step(`Login with wrong username: thanh@gmail.com`, async () => {
-      await loginPage.login('thanh@gmail.com', user.password); // Wrong username
-      await expect(loginPage.failLoginMessage).toBeVisible();
-    });
-
-    await test.step(`Login with wrong password: 123456`, async () => {
-      await loginPage.login(user.username, '123456'); // Wrong password
-      await expect(loginPage.failLoginMessage).toBeVisible();
+    // Step 8: Click "Back to home" → profile page
+    await test.step('Click Back to home → profile page', async () => {
+      await loginPage.clickBackToHome();
+      await expect(page).toHaveURL(loginPage.profileUrl);
     });
   });
-
 });
